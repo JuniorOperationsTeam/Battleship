@@ -1,12 +1,15 @@
-/**
- *
- */
+// java
 package iscteiul.ista.battleship;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
+/**
+ *
+ */
 public abstract class Ship implements IShip {
 
     private static final String GALEAO = "galeao";
@@ -58,8 +61,8 @@ public abstract class Ship implements IShip {
      * @param pos
      */
     public Ship(String category, Compass bearing, IPosition pos) {
-        assert bearing != null;
-        assert pos != null;
+        Objects.requireNonNull(bearing, "bearing cannot be null");
+        Objects.requireNonNull(pos, "pos cannot be null");
 
         this.category = category;
         this.bearing = bearing;
@@ -123,12 +126,10 @@ public abstract class Ship implements IShip {
      * @see battleship.IShip#getTopMostPos()
      */
     @Override
-    public int getTopMostPos() {
-        int top = getPositions().get(0).getRow();
-        for (int i = 1; i < getSize(); i++)
-            if (getPositions().get(i).getRow() < top)
-                top = getPositions().get(i).getRow();
-        return top;
+    public IPosition getTopMostPos() {
+        return positions.stream()
+                .min(Comparator.comparingInt(IPosition::getRow))
+                .orElse(null);
     }
 
     /*
@@ -137,12 +138,10 @@ public abstract class Ship implements IShip {
      * @see battleship.IShip#getBottomMostPos()
      */
     @Override
-    public int getBottomMostPos() {
-        int bottom = getPositions().get(0).getRow();
-        for (int i = 1; i < getSize(); i++)
-            if (getPositions().get(i).getRow() > bottom)
-                bottom = getPositions().get(i).getRow();
-        return bottom;
+    public IPosition getBottomMostPos() {
+        return positions.stream()
+                .max(Comparator.comparingInt(IPosition::getRow))
+                .orElse(null);
     }
 
     /*
@@ -151,12 +150,10 @@ public abstract class Ship implements IShip {
      * @see battleship.IShip#getLeftMostPos()
      */
     @Override
-    public int getLeftMostPos() {
-        int left = getPositions().get(0).getColumn();
-        for (int i = 1; i < getSize(); i++)
-            if (getPositions().get(i).getColumn() < left)
-                left = getPositions().get(i).getColumn();
-        return left;
+    public IPosition getLeftMostPos() {
+        return positions.stream()
+                .min(Comparator.comparingInt(IPosition::getColumn))
+                .orElse(null);
     }
 
     /*
@@ -165,12 +162,10 @@ public abstract class Ship implements IShip {
      * @see battleship.IShip#getRightMostPos()
      */
     @Override
-    public int getRightMostPos() {
-        int right = getPositions().get(0).getColumn();
-        for (int i = 1; i < getSize(); i++)
-            if (getPositions().get(i).getColumn() > right)
-                right = getPositions().get(i).getColumn();
-        return right;
+    public IPosition getRightMostPos() {
+        return positions.stream()
+                .max(Comparator.comparingInt(IPosition::getColumn))
+                .orElse(null);
     }
 
     /*
@@ -180,7 +175,7 @@ public abstract class Ship implements IShip {
      */
     @Override
     public boolean occupies(IPosition pos) {
-        assert pos != null;
+        Objects.requireNonNull(pos, "pos cannot be null");
 
         for (int i = 0; i < getSize(); i++)
             if (getPositions().get(i).equals(pos))
@@ -195,7 +190,7 @@ public abstract class Ship implements IShip {
      */
     @Override
     public boolean tooCloseTo(IShip other) {
-        assert other != null;
+        Objects.requireNonNull(other, "other cannot be null");
 
         Iterator<IPosition> otherPos = other.getPositions().iterator();
         while (otherPos.hasNext())
@@ -212,6 +207,7 @@ public abstract class Ship implements IShip {
      */
     @Override
     public boolean tooCloseTo(IPosition pos) {
+        Objects.requireNonNull(pos, "pos cannot be null");
         for (int i = 0; i < this.getSize(); i++)
             if (getPositions().get(i).isAdjacentTo(pos))
                 return true;
@@ -226,7 +222,7 @@ public abstract class Ship implements IShip {
      */
     @Override
     public void shoot(IPosition pos) {
-        assert pos != null;
+        Objects.requireNonNull(pos, "pos cannot be null");
 
         for (IPosition position : getPositions()) {
             if (position.equals(pos))
@@ -234,6 +230,15 @@ public abstract class Ship implements IShip {
         }
     }
 
+    /*
+     * (non-Javadoc)
+     *
+     * @see battleship.IShip#getSize()
+     */
+    @Override
+    public Integer getSize() {
+        return Integer.valueOf(positions.size());
+    }
 
     @Override
     public String toString() {
