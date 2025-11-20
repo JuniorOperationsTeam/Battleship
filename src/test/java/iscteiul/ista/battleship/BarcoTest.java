@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class BarcoTest {
 
     @Test
-    void caravelOccupiesCorrectPositionsAndCanBeSunk() {
+    void caravelOccupiesCorrectPositionsAndCanBeSunkAndHandlesRepeatedShots() {
         Position start = new Position(2, 3);
         Caravel caravel = new Caravel(Compass.NORTH, start);
 
@@ -23,7 +23,13 @@ public class BarcoTest {
         assertEquals(3, p1.getRow());
         assertEquals(3, p1.getColumn());
 
-        // occupies checks
+        // top/left/right/bottom helpers
+        assertEquals(2, caravel.getTopMostPos());
+        assertEquals(3, caravel.getBottomMostPos());
+        assertEquals(3, caravel.getLeftMostPos());
+        assertEquals(3, caravel.getRightMostPos());
+
+        // occupies checks using equal Position instances
         assertTrue(caravel.occupies(new Position(2, 3)));
         assertTrue(caravel.occupies(new Position(3, 3)));
         assertFalse(caravel.occupies(new Position(4, 3)));
@@ -36,10 +42,23 @@ public class BarcoTest {
         assertTrue(p0.isHit());
         assertTrue(caravel.stillFloating());
 
+        // shooting the same cell twice should not change correctness
+        caravel.shoot(new Position(2, 3));
+        assertTrue(p0.isHit());
+        assertTrue(caravel.stillFloating());
+
         // Shoot the other position -> should not be floating
         caravel.shoot(new Position(3, 3));
         assertTrue(p1.isHit());
         assertFalse(caravel.stillFloating());
+
+        // tooCloseTo - a barge at (4,3) is adjacent to (3,3)
+        Barge nearby = new Barge(Compass.SOUTH, new Position(4, 3));
+        assertTrue(caravel.tooCloseTo(nearby));
+
+        // and not too close to a distant barge
+        Barge far = new Barge(Compass.EAST, new Position(10, 10));
+        assertFalse(caravel.tooCloseTo(far));
     }
 
     @Test
@@ -57,4 +76,3 @@ public class BarcoTest {
         assertNull(s3);
     }
 }
-
