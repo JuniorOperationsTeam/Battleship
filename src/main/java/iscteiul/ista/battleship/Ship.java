@@ -126,7 +126,7 @@ public abstract class Ship implements IShip {
      * @see battleship.IShip#getTopMostPos()
      */
     @Override
-    public IPosition getTopMostPos() {
+    public int getTopMostPos() {
         return positions.stream()
                 .min(Comparator.comparingInt(IPosition::getRow))
                 .orElse(null);
@@ -138,7 +138,7 @@ public abstract class Ship implements IShip {
      * @see battleship.IShip#getBottomMostPos()
      */
     @Override
-    public IPosition getBottomMostPos() {
+    public int getBottomMostPos() {
         return positions.stream()
                 .max(Comparator.comparingInt(IPosition::getRow))
                 .orElse(null);
@@ -150,7 +150,7 @@ public abstract class Ship implements IShip {
      * @see battleship.IShip#getLeftMostPos()
      */
     @Override
-    public IPosition getLeftMostPos() {
+    public int getLeftMostPos() {
         return positions.stream()
                 .min(Comparator.comparingInt(IPosition::getColumn))
                 .orElse(null);
@@ -162,7 +162,7 @@ public abstract class Ship implements IShip {
      * @see battleship.IShip#getRightMostPos()
      */
     @Override
-    public IPosition getRightMostPos() {
+    public int getRightMostPos() {
         return positions.stream()
                 .max(Comparator.comparingInt(IPosition::getColumn))
                 .orElse(null);
