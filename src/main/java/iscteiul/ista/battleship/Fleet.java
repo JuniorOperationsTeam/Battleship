@@ -89,20 +89,8 @@ public class Fleet implements IFleet {
     }
 
     private boolean isInsideBoard(IShip s) {
-        if (s == null) return false;
-        IPosition left = s.getLeftMostPos();
-        IPosition right = s.getRightMostPos();
-        IPosition top = s.getTopMostPos();
-        IPosition bottom = s.getBottomMostPos();
-
-        if (left == null || right == null || top == null || bottom == null) {
-            return false;
-        }
-
-        return left.getColumn() >= 0
-                && right.getColumn() <= BOARD_SIZE - 1
-                && top.getRow() >= 0
-                && bottom.getRow() <= BOARD_SIZE - 1;
+        return (s.getLeftMostPos() >= 0 && s.getRightMostPos() <= BOARD_SIZE - 1 && s.getTopMostPos() >= 0
+                && s.getBottomMostPos() <= BOARD_SIZE - 1);
     }
 
     private boolean colisionRisk(IShip s) {
