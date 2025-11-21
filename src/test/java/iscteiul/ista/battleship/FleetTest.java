@@ -1,6 +1,7 @@
 package iscteiul.ista.battleship;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -14,7 +15,6 @@ class FleetTest {
 
     // ----------------- STUBS AUXILIARES -----------------
 
-    // Implementação simples de IPosition só para testes
     static class TestPosition implements IPosition {
         private final int row;
         private final int col;
@@ -26,15 +26,8 @@ class FleetTest {
             this.col = col;
         }
 
-        @Override
-        public int getRow() {
-            return row;
-        }
-
-        @Override
-        public int getColumn() {
-            return col;
-        }
+        @Override public int getRow() { return row; }
+        @Override public int getColumn() { return col; }
 
         @Override
         public boolean equals(Object other) {
@@ -51,46 +44,28 @@ class FleetTest {
             return (dr <= 1 && dc <= 1) && !(dr == 0 && dc == 0);
         }
 
-        @Override
-        public void occupy() {
-            occupied = true;
-        }
-
-        @Override
-        public void shoot() {
-            hit = true;
-        }
-
-        @Override
-        public boolean isOccupied() {
-            return occupied;
-        }
-
-        @Override
-        public boolean isHit() {
-            return hit;
-        }
+        @Override public void occupy() { occupied = true; }
+        @Override public void shoot() { hit = true; }
+        @Override public boolean isOccupied() { return occupied; }
+        @Override public boolean isHit() { return hit; }
     }
 
-    // Implementação simples de IShip só para testes
     static class TestShip implements IShip {
         private final String category;
         private final List<IPosition> positions;
         private boolean floating = true;
-        private final int top;
-        private final int bottom;
-        private final int left;
-        private final int right;
+
+        private final int top, bottom, left, right;
+
+        // flag para forçar tooCloseTo a devolver true/false
         private boolean tooCloseFlag = false;
 
         TestShip(String category, List<IPosition> positions) {
             this.category = category;
             this.positions = positions;
 
-            int minRow = Integer.MAX_VALUE;
-            int maxRow = Integer.MIN_VALUE;
-            int minCol = Integer.MAX_VALUE;
-            int maxCol = Integer.MIN_VALUE;
+            int minRow = Integer.MAX_VALUE, maxRow = Integer.MIN_VALUE;
+            int minCol = Integer.MAX_VALUE, maxCol = Integer.MIN_VALUE;
 
             for (IPosition p : positions) {
                 minRow = Math.min(minRow, p.getRow());
@@ -105,64 +80,21 @@ class FleetTest {
             this.right = maxCol;
         }
 
-        void setTooCloseFlag(boolean v) {
-            this.tooCloseFlag = v;
-        }
+        void setTooCloseFlag(boolean v) { this.tooCloseFlag = v; }
+        void sink() { this.floating = false; }
 
-        void sink() {
-            this.floating = false;
-        }
+        @Override public String getCategory() { return category; }
+        @Override public Integer getSize() { return positions.size(); }
+        @Override public List<IPosition> getPositions() { return positions; }
+        @Override public IPosition getPosition() { return positions.get(0); }
+        @Override public Compass getBearing() { return Compass.EAST; }
 
-        @Override
-        public String getCategory() {
-            return category;
-        }
+        @Override public boolean stillFloating() { return floating; }
 
-        @Override
-        public Integer getSize() {
-            return positions.size();
-        }
-
-        @Override
-        public List<IPosition> getPositions() {
-            return positions;
-        }
-
-        @Override
-        public IPosition getPosition() {
-            return positions.get(0);
-        }
-
-        @Override
-        public Compass getBearing() {
-            // Não interessa para estes testes
-            return Compass.EAST;
-        }
-
-        @Override
-        public boolean stillFloating() {
-            return floating;
-        }
-
-        @Override
-        public int getTopMostPos() {
-            return top;
-        }
-
-        @Override
-        public int getBottomMostPos() {
-            return bottom;
-        }
-
-        @Override
-        public int getLeftMostPos() {
-            return left;
-        }
-
-        @Override
-        public int getRightMostPos() {
-            return right;
-        }
+        @Override public int getTopMostPos() { return top; }
+        @Override public int getBottomMostPos() { return bottom; }
+        @Override public int getLeftMostPos() { return left; }
+        @Override public int getRightMostPos() { return right; }
 
         @Override
         public boolean occupies(IPosition pos) {
@@ -181,228 +113,283 @@ class FleetTest {
 
         @Override
         public void shoot(IPosition pos) {
-            if (occupies(pos)) {
-                pos.shoot();
-            }
+            if (occupies(pos)) pos.shoot();
         }
 
         @Override
         public String toString() {
-            // Para podermos testar a impressão com o nome da categoria
             return "Ship(" + category + ")";
         }
     }
 
     private static TestShip createSingleCellShip(String category, int row, int col) {
         List<IPosition> pos = new ArrayList<>();
-        pos.add(new TestPosition(row, col));
-        for (IPosition p : pos) {
-            p.occupy();
-        }
+        TestPosition p = new TestPosition(row, col);
+        p.occupy();
+        pos.add(p);
         return new TestShip(category, pos);
     }
 
-    // ----------------- TESTES -----------------
+    // =====================================================
+    //                    TESTES
+    // =====================================================
 
-    @Test
-    @DisplayName("printShips imprime os navios sem lançar exceções")
-    void printShips() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(baos));
+    @Nested
+    @DisplayName("getShips()")
+    class GetShipsTests {
 
-        List<IShip> list = new ArrayList<>();
-        list.add(createSingleCellShip("Nau", 0, 0));
+        @Test
+        @DisplayName("Frota nova devolve lista vazia")
+        void emptyFleet() {
+            Fleet f = new Fleet();
+            assertNotNull(f.getShips());
+            assertTrue(f.getShips().isEmpty());
+        }
 
-        assertDoesNotThrow(() -> Fleet.printShips(list));
-
-        String output = baos.toString();
-        assertTrue(output.contains("Nau")); // porque o toString devolve Ship(Nau)
-
-        System.setOut(originalOut);
+        @Test
+        @DisplayName("Após addShip, getShips contém o navio")
+        void afterAdd() {
+            Fleet f = new Fleet();
+            IShip s = createSingleCellShip("Nau", 0, 0);
+            assertTrue(f.addShip(s));
+            assertEquals(1, f.getShips().size());
+            assertSame(s, f.getShips().get(0));
+        }
     }
 
-    @Test
-    @DisplayName("getShips devolve lista inicialmente vazia e depois com navios")
-    void getShips() {
-        Fleet fleet = new Fleet();
-        assertNotNull(fleet.getShips());
-        assertTrue(fleet.getShips().isEmpty());
+    @Nested
+    @DisplayName("addShip() - todos os ramos")
+    class AddShipTests {
 
-        IShip s = createSingleCellShip("Nau", 0, 0);
-        assertTrue(fleet.addShip(s));
-        assertEquals(1, fleet.getShips().size());
-        assertSame(s, fleet.getShips().get(0));
+        @Test
+        @DisplayName("Adiciona navio válido dentro do tabuleiro e sem colisão")
+        void addValidShip() {
+            Fleet f = new Fleet();
+            IShip s = createSingleCellShip("Fragata", 5, 5);
+            assertTrue(f.addShip(s));
+        }
+
+        @Test
+        @DisplayName("Recusa navio se estiver fora do tabuleiro (left < 0)")
+        void rejectLeftOutside() {
+            Fleet f = new Fleet();
+            IShip s = createSingleCellShip("Nau", 0, -1);
+            assertFalse(f.addShip(s));
+        }
+
+        @Test
+        @DisplayName("Recusa navio se estiver fora do tabuleiro (right > 9)")
+        void rejectRightOutside() {
+            Fleet f = new Fleet();
+            IShip s = createSingleCellShip("Nau", 0, 10);
+            assertFalse(f.addShip(s));
+        }
+
+        @Test
+        @DisplayName("Recusa navio se estiver fora do tabuleiro (top < 0)")
+        void rejectTopOutside() {
+            Fleet f = new Fleet();
+            IShip s = createSingleCellShip("Nau", -1, 0);
+            assertFalse(f.addShip(s));
+        }
+
+        @Test
+        @DisplayName("Recusa navio se estiver fora do tabuleiro (bottom > 9)")
+        void rejectBottomOutside() {
+            Fleet f = new Fleet();
+            IShip s = createSingleCellShip("Nau", 10, 0);
+            assertFalse(f.addShip(s));
+        }
+
+        @Test
+        @DisplayName("Recusa navio se houver risco de colisão")
+        void rejectCollisionRisk() {
+            Fleet f = new Fleet();
+
+            TestShip existing = createSingleCellShip("Nau", 0, 0);
+            existing.setTooCloseFlag(true); // força colisionRisk a devolver true
+
+            assertTrue(f.addShip(existing));
+
+            IShip newShip = createSingleCellShip("Fragata", 3, 3);
+            assertFalse(f.addShip(newShip));
+        }
+
+        @Test
+        @DisplayName("Recusa navio quando frota excede o limite (size > FLEET_SIZE)")
+        void rejectWhenFleetTooBig() {
+            Fleet f = new Fleet();
+
+            // encher com navios válidos e sem colisão
+            int maxAllowedByImpl = IFleet.FLEET_SIZE + 1; // a implementação permite 11
+
+            for (int i = 0; i < maxAllowedByImpl; i++) {
+                int row = i / IFleet.BOARD_SIZE;
+                int col = i % IFleet.BOARD_SIZE;
+                assertTrue(f.addShip(createSingleCellShip("S" + i, row, col)));
+            }
+
+            // este já deve falhar porque ships.size() agora é 11 (>10)
+            assertFalse(f.addShip(createSingleCellShip("Extra", 9, 9)));
+        }
     }
 
-    @Test
-    @DisplayName("addShip adiciona navio válido e recusa navio fora do tabuleiro")
-    void addShip() {
-        Fleet fleet = new Fleet();
+    @Nested
+    @DisplayName("getShipsLike()")
+    class GetShipsLikeTests {
 
-        // dentro do tabuleiro
-        IShip inside = createSingleCellShip("Fragata", 5, 5);
-        assertTrue(fleet.addShip(inside));
-        assertEquals(1, fleet.getShips().size());
+        @Test
+        @DisplayName("Filtra navios corretamente por categoria")
+        void filterByCategory() {
+            Fleet f = new Fleet();
+            IShip s1 = createSingleCellShip("Nau", 0, 0);
+            IShip s2 = createSingleCellShip("Nau", 1, 1);
+            IShip s3 = createSingleCellShip("Fragata", 2, 2);
 
-        // fora do tabuleiro (coluna negativa)
-        List<IPosition> pos = new ArrayList<>();
-        pos.add(new TestPosition(0, -1));
-        IShip outside = new TestShip("Nau", pos);
-        assertFalse(fleet.addShip(outside));
-        assertEquals(1, fleet.getShips().size());
+            f.addShip(s1);
+            f.addShip(s2);
+            f.addShip(s3);
+
+            assertEquals(2, f.getShipsLike("Nau").size());
+            assertEquals(1, f.getShipsLike("Fragata").size());
+            assertTrue(f.getShipsLike("Barca").isEmpty());
+        }
     }
 
-    @Test
-    @DisplayName("getShipsLike filtra navios pela categoria")
-    void getShipsLike() {
-        Fleet fleet = new Fleet();
-        IShip s1 = createSingleCellShip("Nau", 0, 0);
-        IShip s2 = createSingleCellShip("Nau", 1, 1);
-        IShip s3 = createSingleCellShip("Fragata", 2, 2);
+    @Nested
+    @DisplayName("getFloatingShips()")
+    class FloatingShipsTests {
 
-        fleet.addShip(s1);
-        fleet.addShip(s2);
-        fleet.addShip(s3);
+        @Test
+        @DisplayName("Devolve apenas navios que ainda flutuam")
+        void onlyFloating() {
+            Fleet f = new Fleet();
+            TestShip s1 = createSingleCellShip("Nau", 0, 0);
+            TestShip s2 = createSingleCellShip("Fragata", 1, 1);
+            TestShip s3 = createSingleCellShip("Barca", 2, 2);
 
-        List<IShip> naus = fleet.getShipsLike("Nau");
-        assertEquals(2, naus.size());
-        assertTrue(naus.contains(s1));
-        assertTrue(naus.contains(s2));
+            f.addShip(s1);
+            f.addShip(s2);
+            f.addShip(s3);
 
-        List<IShip> fragatas = fleet.getShipsLike("Fragata");
-        assertEquals(1, fragatas.size());
-        assertTrue(fragatas.contains(s3));
+            s2.sink();
 
-        List<IShip> barcas = fleet.getShipsLike("Barca");
-        assertTrue(barcas.isEmpty());
+            List<IShip> floating = f.getFloatingShips();
+            assertEquals(2, floating.size());
+            assertTrue(floating.contains(s1));
+            assertTrue(floating.contains(s3));
+        }
+
+        @Test
+        @DisplayName("Se todos afundarem, devolve lista vazia")
+        void noneFloating() {
+            Fleet f = new Fleet();
+            TestShip s1 = createSingleCellShip("Nau", 0, 0);
+            TestShip s2 = createSingleCellShip("Fragata", 1, 1);
+
+            f.addShip(s1);
+            f.addShip(s2);
+
+            s1.sink();
+            s2.sink();
+
+            assertTrue(f.getFloatingShips().isEmpty());
+        }
     }
 
-    @Test
-    @DisplayName("getFloatingShips devolve apenas os navios ainda a flutuar")
-    void getFloatingShips() {
-        Fleet fleet = new Fleet();
+    @Nested
+    @DisplayName("shipAt()")
+    class ShipAtTests {
 
-        TestShip s1 = createSingleCellShip("Nau", 0, 0);
-        TestShip s2 = createSingleCellShip("Fragata", 1, 1);
-        TestShip s3 = createSingleCellShip("Barca", 2, 2);
+        @Test
+        @DisplayName("Devolve navio correto quando existe nessa posição")
+        void returnsShipWhenExists() {
+            Fleet f = new Fleet();
+            IShip s1 = createSingleCellShip("Nau", 3, 3);
+            f.addShip(s1);
 
-        fleet.addShip(s1);
-        fleet.addShip(s2);
-        fleet.addShip(s3);
+            assertEquals(s1, f.shipAt(new TestPosition(3, 3)));
+        }
 
-        // Afundar um dos navios
-        s2.sink();
+        @Test
+        @DisplayName("Devolve null quando não existe navio na posição")
+        void returnsNullWhenEmpty() {
+            Fleet f = new Fleet();
+            IShip s1 = createSingleCellShip("Nau", 3, 3);
+            f.addShip(s1);
 
-        List<IShip> floating = fleet.getFloatingShips();
-        assertEquals(2, floating.size());
-        assertTrue(floating.contains(s1));
-        assertTrue(floating.contains(s3));
-        assertFalse(floating.contains(s2));
+            assertNull(f.shipAt(new TestPosition(9, 9)));
+        }
     }
 
-    @Test
-    @DisplayName("shipAt devolve o navio na posição ou null se não houver")
-    void shipAt() {
-        Fleet fleet = new Fleet();
+    @Nested
+    @DisplayName("Métodos de impressão")
+    class PrintTests {
 
-        TestShip s1 = createSingleCellShip("Nau", 0, 0);
-        TestShip s2 = createSingleCellShip("Fragata", 3, 3);
+        @Test
+        @DisplayName("printShips não lança exceções e imprime algo")
+        void printShipsWorks() {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream old = System.out;
+            System.setOut(new PrintStream(baos));
 
-        fleet.addShip(s1);
-        fleet.addShip(s2);
+            List<IShip> list = new ArrayList<>();
+            list.add(createSingleCellShip("Nau", 0, 0));
 
-        IPosition pos1 = new TestPosition(0, 0);
-        IPosition pos2 = new TestPosition(3, 3);
-        IPosition posEmpty = new TestPosition(5, 5);
+            assertDoesNotThrow(() -> Fleet.printShips(list));
+            assertTrue(baos.toString().contains("Nau"));
 
-        assertEquals(s1, fleet.shipAt(pos1));
-        assertEquals(s2, fleet.shipAt(pos2));
-        assertNull(fleet.shipAt(posEmpty));
-    }
+            System.setOut(old);
+        }
 
-    @Test
-    @DisplayName("printStatus imprime o estado da frota sem lançar exceções")
-    void printStatus() {
-        Fleet fleet = new Fleet();
-        fleet.addShip(createSingleCellShip("Nau", 0, 0));
-        fleet.addShip(createSingleCellShip("Fragata", 1, 1));
+        @Test
+        @DisplayName("printStatus imprime sem lançar exceções")
+        void printStatusWorks() {
+            Fleet f = new Fleet();
+            f.addShip(createSingleCellShip("Nau", 0, 0));
+            f.addShip(createSingleCellShip("Fragata", 1, 1));
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(baos));
+            assertDoesNotThrow(f::printStatus);
+        }
 
-        assertDoesNotThrow(fleet::printStatus);
+        @Test
+        @DisplayName("printShipsByCategory imprime só essa categoria")
+        void printShipsByCategoryWorks() {
+            Fleet f = new Fleet();
+            f.addShip(createSingleCellShip("Nau", 0, 0));
+            f.addShip(createSingleCellShip("Fragata", 1, 1));
 
-        String output = baos.toString();
-        assertTrue(output.contains("Nau"));
-        assertTrue(output.contains("Fragata"));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream old = System.out;
+            System.setOut(new PrintStream(baos));
 
-        System.setOut(originalOut);
-    }
+            f.printShipsByCategory("Nau");
 
-    @Test
-    @DisplayName("printShipsByCategory imprime apenas navios da categoria indicada")
-    void printShipsByCategory() {
-        Fleet fleet = new Fleet();
-        fleet.addShip(createSingleCellShip("Nau", 0, 0));
-        fleet.addShip(createSingleCellShip("Fragata", 1, 1));
+            String out = baos.toString();
+            assertTrue(out.contains("Nau"));
+            assertFalse(out.contains("Fragata"));
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(baos));
+            System.setOut(old);
+        }
 
-        fleet.printShipsByCategory("Nau");
+        @Test
+        @DisplayName("printAllShips imprime todos os navios")
+        void printAllShipsWorks() {
+            Fleet f = new Fleet();
+            f.addShip(createSingleCellShip("Nau", 0, 0));
+            f.addShip(createSingleCellShip("Fragata", 1, 1));
 
-        String output = baos.toString();
-        assertTrue(output.contains("Nau"));
-        assertFalse(output.contains("Fragata"));
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream old = System.out;
+            System.setOut(new PrintStream(baos));
 
-        System.setOut(originalOut);
-    }
+            f.printAllShips();
 
-    @Test
-    @DisplayName("printFloatingShips imprime apenas navios a flutuar")
-    void printFloatingShips() {
-        Fleet fleet = new Fleet();
-        TestShip s1 = createSingleCellShip("Nau", 0, 0);
-        TestShip s2 = createSingleCellShip("Fragata", 1, 1);
-        s2.sink();
+            String out = baos.toString();
+            assertTrue(out.contains("Nau"));
+            assertTrue(out.contains("Fragata"));
 
-        fleet.addShip(s1);
-        fleet.addShip(s2);
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(baos));
-
-        fleet.printFloatingShips();
-
-        String output = baos.toString();
-        assertTrue(output.contains("Nau"));
-        assertFalse(output.contains("Fragata"));
-
-        System.setOut(originalOut);
-    }
-
-    @Test
-    @DisplayName("printAllShips imprime todos os navios da frota")
-    void printAllShips() {
-        Fleet fleet = new Fleet();
-        fleet.addShip(createSingleCellShip("Nau", 0, 0));
-        fleet.addShip(createSingleCellShip("Fragata", 1, 1));
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream originalOut = System.out;
-        System.setOut(new PrintStream(baos));
-
-        // método package-private, mas estamos no mesmo package
-        fleet.printAllShips();
-
-        String output = baos.toString();
-        assertTrue(output.contains("Nau"));
-        assertTrue(output.contains("Fragata"));
-
-        System.setOut(originalOut);
+            System.setOut(old);
+        }
     }
 }
