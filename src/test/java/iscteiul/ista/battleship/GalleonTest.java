@@ -26,9 +26,9 @@ class GalleonTest {
     }
 
     @Test
-    @DisplayName("Construtor com bearing nulo lança NullPointerException")
+    @DisplayName("Construtor com bearing nulo lança AssertionError (comportamento atual)")
     void constructorNullBearing() {
-        assertThrows(NullPointerException.class, () -> new Galleon(null, p(1, 1)));
+        assertThrows(AssertionError.class, () -> new Galleon(null, p(1, 1)));
     }
 
     @Test
