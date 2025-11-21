@@ -18,13 +18,13 @@ public interface IShip {
 
     boolean stillFloating();
 
-    int getTopMostPos();
+    IPosition getTopMostPos();
 
-    int getBottomMostPos();
+    IPosition getBottomMostPos();
 
-    int getLeftMostPos();
+    IPosition getLeftMostPos();
 
-    int getRightMostPos();
+    IPosition getRightMostPos();
 
     boolean occupies(IPosition pos);
 
