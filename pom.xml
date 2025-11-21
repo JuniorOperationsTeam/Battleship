@@ -48,6 +48,12 @@
           <version>4.13.1</version>
           <scope>test</scope>
       </dependency>
+      <!-- https://mvnrepository.com/artifact/io.qameta.allure/allure-java-commons -->
+      <dependency>
+          <groupId>io.qameta.allure</groupId>
+          <artifactId>allure-java-commons</artifactId>
+          <version>2.31.0</version>
+      </dependency>
   </dependencies>
   <reporting>
     <plugins>
